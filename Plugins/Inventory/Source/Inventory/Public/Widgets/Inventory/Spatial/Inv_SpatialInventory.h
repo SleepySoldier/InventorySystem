@@ -17,6 +17,9 @@ class INVENTORY_API UInv_SpatialInventory : public UInv_InventoryBaseWidget
 {
 	GENERATED_BODY()
 
+public:
+	virtual void NativeOnInitialized() override;
+	
 private:
 	
 	UPROPERTY(meta = (BindWidget))
@@ -37,4 +40,15 @@ private:
 	TObjectPtr<UButton> Button_Consumable;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Button_Craftable;
+
+	UFUNCTION()
+	void ShowEquipable();
+	UFUNCTION()
+	void ShowConsumables();
+	UFUNCTION()
+	void ShowCraftables();
+	
+	void DisableButton(UButton* Button) const;
+
+	void SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button);
 };
