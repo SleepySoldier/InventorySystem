@@ -7,6 +7,7 @@
 
 class UInv_InventoryComponent;
 class UInv_InventoryItem;
+class UInv_ItemComponent;
 
 
 // A single entry in an inventory.
@@ -38,8 +39,8 @@ struct FInv_InventoryFastArray : public FFastArraySerializer
 	TArray<UInv_InventoryItem*> GetAllItems() const;
 
 	// FFastArraySerializer contract
-	void PreReplicatedRemove(const TArray<int32> RemovedIndices, int32 FinalSize);
-	void PostReplicatedAdd(const TArray<int32> AddedIndices, int32 FinalSize);
+	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
+	void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
 	// End of FFastArraySerializer contract.
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
