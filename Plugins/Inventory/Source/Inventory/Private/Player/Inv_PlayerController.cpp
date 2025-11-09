@@ -111,7 +111,6 @@ void AInv_PlayerController::TraceForItem()
 	{
 		if (UActorComponent* Highlightable = ThisActor->FindComponentByInterface(UInv_Highlightable::StaticClass()); IsValid(Highlightable))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Should highlight"));
 			IInv_Highlightable::Execute_Highlight(Highlightable);
 		}
 		UInv_ItemComponent* ItemComponent = ThisActor->FindComponentByClass<UInv_ItemComponent>();

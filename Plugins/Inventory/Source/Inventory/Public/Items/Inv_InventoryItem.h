@@ -18,6 +18,7 @@ class INVENTORY_API UInv_InventoryItem : public UObject
 public:
 	//This class has to override LifeTimeReplicatedProps to be able to have replicated functionality.
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual bool IsSupportedForNetworking() const override {return true;}
 
 	void SetItemManifest(const FInv_ItemManifest& Manifest);
 	

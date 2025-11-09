@@ -7,21 +7,21 @@
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
 
 
-UInv_InventoryComponent::UInv_InventoryComponent()
+UInv_InventoryComponent::UInv_InventoryComponent() : InventoryList(this)
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	SetIsReplicatedByDefault(true);
 	bReplicateUsingRegisteredSubObjectList = true;
 	bInventoryMenuOpen = false;
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, InventoryList);
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 {
 	FInv_SlotAvailabilityResult Result = InventoryMenu->HasRoomForItem(ItemComponent);
@@ -43,7 +43,7 @@ void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 	}
 	
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::Server_AddNewItem_Implementation(UInv_ItemComponent* ItemComp, int32 StackCount)
 {
 	UInv_InventoryItem* NewItem = InventoryList.AddEntry(ItemComp);
@@ -55,12 +55,12 @@ void UInv_InventoryComponent::Server_AddNewItem_Implementation(UInv_ItemComponen
 	
 	// Tell the item comp to destroy its owning actor.
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::Server_AddStacksToItem_Implementation(UInv_ItemComponent* ItemComp, int32 StackCount, int32 Remainder)
 {
 	
 }
-
+/*-----------------------------------------------------------*/
 
 void UInv_InventoryComponent::BeginPlay()
 {
@@ -69,7 +69,7 @@ void UInv_InventoryComponent::BeginPlay()
 	ConstructInventory();
 	
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::ToggleInventoryMenu()
 {
 	if (bInventoryMenuOpen)
@@ -81,7 +81,7 @@ void UInv_InventoryComponent::ToggleInventoryMenu()
 		OpenInventoryMenu();
 	}
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::AddRepSubObj(UObject* SubObj)
 {
 	if (IsUsingRegisteredSubObjectList() && IsReadyForReplication() && IsValid(SubObj))
@@ -89,7 +89,7 @@ void UInv_InventoryComponent::AddRepSubObj(UObject* SubObj)
 		AddReplicatedSubObject(SubObj);
 	}
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::ConstructInventory()
 {
 	OwningController = Cast<APlayerController>(GetOwner());
@@ -100,7 +100,7 @@ void UInv_InventoryComponent::ConstructInventory()
 	InventoryMenu->AddToViewport();
 	CloseInventoryMenu();
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::OpenInventoryMenu()
 {
 	if (!IsValid(InventoryMenu)) return;
@@ -114,7 +114,7 @@ void UInv_InventoryComponent::OpenInventoryMenu()
 	OwningController->SetInputMode(InputMode);
 	OwningController->SetShowMouseCursor(true);
 }
-
+/*-----------------------------------------------------------*/
 void UInv_InventoryComponent::CloseInventoryMenu()
 {
 	if (!IsValid(InventoryMenu)) return;

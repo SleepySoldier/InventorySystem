@@ -8,6 +8,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "InventoryManagement/Components/Inv_InventoryComponent.h"
 #include "InventoryManagement/Utils/UInv_InventoryStatics.h"
+#include "Items/Inv_InventoryItem.h"
 #include "Widgets/Inventory/GridSlots/Inv_GridSlot.h"
 #include "Widgets/Utils/Inv_WidgetUtils.h"
 
@@ -22,7 +23,9 @@ void UInv_InventoryGrid::NativeOnInitialized()
 
 void UInv_InventoryGrid::AddItem(UInv_InventoryItem* Item)
 {
-	
+	if (!MatchesCategory(Item)) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("FInventoryGrid::AddItem"))
 }
 
 void UInv_InventoryGrid::ConstructGrid()
@@ -44,12 +47,14 @@ void UInv_InventoryGrid::ConstructGrid()
 			GridCPS->SetPosition(TilePosition * TileSize);
 
 			GridSlots.Add(GridSlot);
-			UE_LOG(LogTemp, Warning, TEXT("%i"), GridSlot->GetTileIndex());
 		}
 	}
 }
 
 bool UInv_InventoryGrid::MatchesCategory(const UInv_InventoryItem* Item) const
 {
-	return Item->GetItemManifest().GetItemCategoy() == ItemCategory;
+
+	return Item->GetItemManifest().GetItemCategory() == ItemCategory;
+
 }
+	

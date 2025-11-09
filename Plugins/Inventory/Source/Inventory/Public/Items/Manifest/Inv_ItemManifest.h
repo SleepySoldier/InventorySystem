@@ -9,6 +9,7 @@
 // The Item manifest contains all of the necessary data for creating a new item.
 
 class UInv_InventoryItem;
+struct FInv_ItemFragment;
 
 USTRUCT(BlueprintType)
 struct INVENTORY_API FInv_ItemManifest
@@ -20,6 +21,9 @@ struct INVENTORY_API FInv_ItemManifest
 	FGameplayTag GetItemType() const { return ItemType; }
 	
 private:
+	/* You will only be able to add childeren of the specified struct using ExcludBaseStuct */
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (ExcludeBaseStruct))
+	TArray<TInstancedStruct<FInv_ItemFragment>> Fragments;
 
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	EInv_ItemCategory ItemCategory{EInv_ItemCategory::None};
