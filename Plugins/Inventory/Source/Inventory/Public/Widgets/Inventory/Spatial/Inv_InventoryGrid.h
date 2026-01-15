@@ -59,10 +59,12 @@ private:
 	FIntPoint GetItemDimensions(const FInv_ItemManifest& Manifest) const;
 	bool CheckSlotConstraints(const UInv_GridSlot* GridSlot,const UInv_GridSlot* SubGridSlot,
 		const TSet<int32>& CheckedIndices, TSet<int32>& OutTentativelyClaimed, const FGameplayTag& ItemType, const int32 MaxStackSize) const;
-	bool HasValidItem(const UInv_GridSlot* Slot) const;
+	bool HasValidItem(const UInv_GridSlot* GridSlot) const;
 	bool IsUpperLeftGridSlot(const UInv_GridSlot* GridSlot, const UInv_GridSlot* SubGridSlot) const;
 	bool DoesItemTypeMatch(const UInv_InventoryItem* SubItem,const FGameplayTag& ItemType) const;
 	bool IsInGridBounds(const int32 StartingIndex, const FIntPoint& ItemDimensions) const;
+	int32 DetermineFillAmountForSlot(const bool bStackable, const int32 MaxStackSize, const int32 AmountToFill, const UInv_GridSlot* GridSlot) const;
+	int32 GetStackAmount(const UInv_GridSlot* GridSlot) const;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "Inventory")
 	EInv_ItemCategory ItemCategory;

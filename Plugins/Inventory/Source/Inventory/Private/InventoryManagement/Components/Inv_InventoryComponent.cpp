@@ -3,8 +3,11 @@
 
 #include "InventoryManagement/Components/Inv_InventoryComponent.h"
 
+#include "Items/Components/Inv_ItemComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
+#include "Items/Inv_InventoryItem.h"
+#include "Items/Fragments/Inv_ItemFragment.h"
 
 
 UInv_InventoryComponent::UInv_InventoryComponent() : InventoryList(this)
@@ -26,6 +29,9 @@ void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 {
 	FInv_SlotAvailabilityResult Result = InventoryMenu->HasRoomForItem(ItemComponent);
 
+	UInv_InventoryItem* FoundItem = InventoryList.FindFirstItemByType(ItemComponent->GetItemManifest().GetItemType());
+	Result.Item = FoundItem;
+	
 	if (Result.TotalRoomToFill == 0)
 	{
 		NoRoomInInventory.Broadcast();
@@ -47,18 +53,34 @@ void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 void UInv_InventoryComponent::Server_AddNewItem_Implementation(UInv_ItemComponent* ItemComp, int32 StackCount)
 {
 	UInv_InventoryItem* NewItem = InventoryList.AddEntry(ItemComp);
+	NewItem->SetStackCount(StackCount);
 
 	if (GetOwner()->GetNetMode() == NM_ListenServer || GetOwner()->GetNetMode() == NM_Standalone)
 	{
 		OnItemAdded.Broadcast(NewItem);
 	}
+
+	ItemComp->PickedUp();
 	
 	// Tell the item comp to destroy its owning actor.
 }
 /*-----------------------------------------------------------*/
 void UInv_InventoryComponent::Server_AddStacksToItem_Implementation(UInv_ItemComponent* ItemComp, int32 StackCount, int32 Remainder)
 {
-	
+	const FGameplayTag& ItemType = IsValid(ItemComp) ? ItemComp->GetItemManifest().GetItemType() : FGameplayTag::EmptyTag;
+	UInv_InventoryItem* Item = InventoryList.FindFirstItemByType(ItemType);
+	if (!IsValid(Item)) return;
+
+	Item->SetStackCount(Item->GetTotalStackCount() + StackCount);
+
+	if (Remainder == 0)
+	{
+		ItemComp->PickedUp();
+	}
+	else if (FInv_StackableFragment* StackableFragment = ItemComp->GetItemManifest().GetFragmentOfTypeMutable<FInv_StackableFragment>())
+	{
+		StackableFragment->SetStackCount(Remainder);
+	}
 }
 /*-----------------------------------------------------------*/
 
