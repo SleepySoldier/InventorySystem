@@ -7,7 +7,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "InventoryManagement/Components/Inv_InventoryComponent.h"
-#include "InventoryManagement/Utils/UInv_InventoryStatics.h"
+#include "InventoryManagement/Utils/Inv_InventoryStatics.h"
 #include "Items/Inv_InventoryItem.h"
 #include "Items/Components/Inv_ItemComponent.h"
 #include "Items/Fragments/Inv_FragmentTags.h"
@@ -21,7 +21,7 @@ void UInv_InventoryGrid::NativeOnInitialized()
 	Super::NativeOnInitialized();
 	ConstructGrid();
 
-	InventoryComponent = UUInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
+	InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	InventoryComponent->OnItemAdded.AddDynamic(this, &ThisClass::AddItem);
 }
 
@@ -33,17 +33,37 @@ FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const UInv_Invent
 {
 	return HasRoomForItem(Item->GetItemManifest());
 }
-
+  
 FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const FInv_ItemManifest& Manifest)
 {
 	FInv_SlotAvailabilityResult Result;
-	Result.TotalRoomToFill = 1;
 
-	FInv_SlotAvailability SlotAvailability;
-	SlotAvailability.AmountToFill = 1;
-	SlotAvailability.Index = 0;
-	
-	Result.SlotAvailabilities.Add(MoveTemp(SlotAvailability));
+	const FInv_StackableFragment* StackableFragment = Manifest.GetFragmentOfType<FInv_StackableFragment>();
+	Result.bStackable = StackableFragment != nullptr;
+
+	const int32 MaxStackSize = StackableFragment ? StackableFragment->GetMaxStackSize() : 1;
+	int32 AmountToFill = StackableFragment ? StackableFragment->GetStackCount() : 1;
+
+	TSet<int32> CheckedIndices;
+	for (const auto& GridSlot : GridSlots)
+	{
+		
+		if (AmountToFill == 0) break;
+		if (IsIndexClaimed(CheckedIndices, GridSlot->GetIndex())) continue;
+
+		const FInv_GridFragment* GridFragment = Manifest.GetFragmentOfType<FInv_GridFragment>();
+		const FIntPoint Dimensions = GridFragment ? GridFragment->GetGridSize() : FIntPoint(1, 1);
+
+		if (!IsInGridBounds(GridSlot->GetIndex(), GetItemDimensions(Manifest))) continue;
+
+		TSet<int32> TentativelyClaimed;
+		if (!HasRoomAtIndex(GridSlot, GetItemDimensions(Manifest), CheckedIndices, TentativelyClaimed, Manifest.GetItemType(), MaxStackSize))
+		{
+			continue;
+		};
+
+		CheckedIndices.Append(TentativelyClaimed);
+	}
 	
 	return Result;
 }
@@ -62,6 +82,7 @@ void UInv_InventoryGrid::AddItemToIndices(const FInv_SlotAvailabilityResult& Res
 	for (const auto& Availability : Result.SlotAvailabilities)
 	{
 		AddItemAtIndex(NewItem, Availability.Index, Result.bStackable, Availability.AmountToFill);
+		UpdateGridSlots(NewItem, Availability.Index, Result.bStackable, Availability.AmountToFill);
 	}
 }
 
@@ -87,6 +108,9 @@ UInv_SlottedItem* UInv_InventoryGrid::CreateSlottedItem(UInv_InventoryItem* Item
 
 	SetItemSlottedImage(SlottedItem, GridFragment, ImageFragment);
 	SlottedItem->SetGridIndex(Index);
+	SlottedItem->SetIsStackable(bStackable);
+	const int32 StackUpdateAmount = bStackable? StackAmount : 0;
+	SlottedItem->UpdateStackCount(StackUpdateAmount);
 
 	return SlottedItem;
 	
@@ -102,6 +126,108 @@ void UInv_InventoryGrid::AddSlottedItemToCanvas(const int32 Index, const FInv_Gr
 	const FVector2D DrawPos = UInv_WidgetUtils::GetPositionFromIndex(Index, Columns) * TileSize;
 	const FVector2D DrawPosWithPadding = DrawPos + FVector2D(GridFragment->GetGridPadding());
 	CanvasSlot->SetPosition(DrawPosWithPadding);
+}
+
+void UInv_InventoryGrid::UpdateGridSlots(UInv_InventoryItem* NewItem, const int32 Index, bool bStackableItem, const int32 StackAmount)
+{
+	check(GridSlots.IsValidIndex(Index));
+
+	if (bStackableItem)
+	{
+		GridSlots[Index]->SetStackCount(StackAmount);
+	}
+	
+	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(NewItem, FragmentTags::GridFragment);
+
+	const FIntPoint Dimensions = GridFragment ? GridFragment->GetGridSize() : FIntPoint(1,1);
+
+	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [&](UInv_GridSlot* GridSlot)
+	{
+		GridSlot->SetInventoryItem(NewItem);
+		GridSlot->SetUpperLeftIndex(Index);
+		GridSlot->SetOccupiedTexture();
+		GridSlot->SetAvailable(false);
+	});
+}
+
+bool UInv_InventoryGrid::IsIndexClaimed(const TSet<int32>& CheckedIndices, const int32 Index) const
+{
+	return CheckedIndices.Contains(Index);
+}
+
+bool UInv_InventoryGrid::HasRoomAtIndex(const UInv_GridSlot* GridSlot, const FIntPoint& Dimensions,
+	const TSet<int32> CheckedIndices, TSet<int32> OutTentativelyClaimed, const FGameplayTag& ItemType, const int32 MaxStackSize)
+{
+	bool bHasRoomAtIndex = true;
+
+	UInv_InventoryStatics::ForEach2D(GridSlots, GridSlot->GetIndex(), Dimensions, Columns, [&](const UInv_GridSlot* SubGridSlot)
+	{
+		if (CheckSlotConstraints(GridSlot, SubGridSlot, CheckedIndices, OutTentativelyClaimed, ItemType, MaxStackSize))
+		{
+			OutTentativelyClaimed.Add(SubGridSlot->GetIndex());
+		}
+		else
+		{
+			bHasRoomAtIndex = false;
+		}
+	});
+	return bHasRoomAtIndex;
+}
+
+FIntPoint UInv_InventoryGrid::GetItemDimensions(const FInv_ItemManifest& Manifest) const
+{
+	const FInv_GridFragment* GridFragment = Manifest.GetFragmentOfType<FInv_GridFragment>();
+	return GridFragment ? GridFragment->GetGridSize() : FIntPoint(1, 1);
+
+}
+
+bool UInv_InventoryGrid::CheckSlotConstraints(const UInv_GridSlot* GridSlot,
+	const UInv_GridSlot* SubGridSlot,
+	const TSet<int32>& CheckedIndices,
+	TSet<int32>& OutTentativelyClaimed,
+	const FGameplayTag& ItemType, const int32 MaxStackSize) const
+{
+	if (IsIndexClaimed(CheckedIndices, SubGridSlot->GetIndex()))
+
+	if (!HasValidItem(SubGridSlot))
+	{
+		OutTentativelyClaimed.Add(SubGridSlot->GetIndex());
+		return true;
+	}
+
+	if (!IsUpperLeftGridSlot(GridSlot, SubGridSlot)) return false;
+
+	const UInv_InventoryItem* SubItem = SubGridSlot->GetInventoryItem().Get();
+	if (!SubItem->IsStackable()) return false;
+
+	if (!DoesItemTypeMatch(SubItem, ItemType)) return false;
+
+	if (GridSlot->GetStackCount() >= MaxStackSize) return false;
+	
+	return true;
+}
+
+bool UInv_InventoryGrid::HasValidItem(const UInv_GridSlot* Slot) const
+{
+	return Slot->GetInventoryItem().IsValid();
+}
+
+bool UInv_InventoryGrid::IsUpperLeftGridSlot(const UInv_GridSlot* GridSlot, const UInv_GridSlot* SubGridSlot) const
+{
+	return SubGridSlot->GetUpperLeftIndex() == GridSlot->GetIndex();
+}
+
+bool UInv_InventoryGrid::DoesItemTypeMatch(const UInv_InventoryItem* SubItem, const FGameplayTag& ItemType) const
+{
+	return SubItem->GetItemManifest().GetItemType().MatchesTagExact(ItemType);
+}
+
+bool UInv_InventoryGrid::IsInGridBounds(const int32 StartingIndex, const FIntPoint& ItemDimensions) const
+{
+	if (StartingIndex < 0 || StartingIndex >= GridSlots.Num()) return false;
+	const int32 EndColumn = (StartingIndex % Columns) + ItemDimensions.X;
+	const int32 EndRow = (StartingIndex / Columns) + ItemDimensions.Y;
+	return EndColumn <= Columns && EndRow <= Rows;
 }
 
 FVector2D UInv_InventoryGrid::GetDrawSize(const FInv_GridFragment* GridFragment) const

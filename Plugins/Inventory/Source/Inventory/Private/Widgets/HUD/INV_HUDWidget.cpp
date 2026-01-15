@@ -4,14 +4,14 @@
 #include "Widgets/HUD/INV_HUDWidget.h"
 
 #include "InventoryManagement/Components/Inv_InventoryComponent.h"
-#include "InventoryManagement/Utils/UInv_InventoryStatics.h"
+#include "InventoryManagement/Utils/Inv_InventoryStatics.h"
 #include "Widgets/HUD/Inv_InfoMessage.h"
 
 void UINV_HUDWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	UInv_InventoryComponent* InventoryComponent = UUInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
+	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	if (IsValid(InventoryComponent))
 	{
 		InventoryComponent->NoRoomInInventory.AddDynamic(this, &ThisClass::OnNoRoom);
