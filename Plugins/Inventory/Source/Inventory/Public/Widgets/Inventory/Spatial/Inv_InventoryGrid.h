@@ -68,6 +68,10 @@ private:
 	int32 GetStackAmount(const UInv_GridSlot* GridSlot) const;
 	bool IsRightClick(const FPointerEvent& MouseEvent) const;
 	bool IsLeftClick(const FPointerEvent& MouseEvent) const;
+	void Pickup(UInv_InventoryItem* ClickedInventoryItem, const int32 GridIndex);
+	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
+	void AssignHoverItem(UInv_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex);
+	void RemoveItemFromGrid(UInv_InventoryItem* Item, const int32 GridIndex);
 
 	
 	UFUNCTION()
@@ -107,5 +111,8 @@ private:
 	TSubclassOf<UInv_HoverItem> HoverItemClass;
 	UPROPERTY()
 	TObjectPtr<UInv_HoverItem> HoverItem;
+
+	FInv_TileParameters TileParameters;
+	FInv_TileParameters LastTileParameters;
 
 };
