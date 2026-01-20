@@ -27,7 +27,9 @@ class INVENTORY_API UInv_InventoryGrid : public UUserWidget
 
 public:
 
-	virtual void NativeOnInitialized() override;	
+	virtual void NativeOnInitialized() override;
+
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 	EInv_ItemCategory GetItemCategory() const {return ItemCategory;}
 
@@ -72,7 +74,12 @@ private:
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex);
 	void RemoveItemFromGrid(UInv_InventoryItem* Item, const int32 GridIndex);
-
+	void UpdateTileParameters(const FVector2D& CanvasPosition, const FVector2D& MousePosition);
+	FIntPoint CalculateHoveredCoordinates(const FVector2D& CanvasPosition, const FVector2D& MousePosition) const;
+	EInv_TileQuadrant CalculateTileQuadrant(const FVector2D& CanvasPosition, const FVector2D & MousePosition) const;
+	void OnTileParametersUpdated(const FInv_TileParameters& Params);
+	FIntPoint CalculateStartingCoordinate(const FIntPoint& Coordinate, const FIntPoint& Dimensions, EInv_TileQuadrant Quadrant) const;
+	FInv_SpaceQueryResult CheckHoverPosition(const FIntPoint& Position, const FIntPoint& Dimensions);
 	
 	UFUNCTION()
 	void AddStacks(const FInv_SlotAvailabilityResult& Result);
@@ -114,5 +121,8 @@ private:
 
 	FInv_TileParameters TileParameters;
 	FInv_TileParameters LastTileParameters;
+	// Index where an item would be place if we click on the grid at a valid location.
+	int32 ItemDropIndex{INDEX_NONE};
+	FInv_SpaceQueryResult  CurrentQueryResult;
 
 };
