@@ -39,7 +39,7 @@ public:
 
 	void SetImageBrush(const FSlateBrush& Brush) const;
 
-	void UpdateStackCount(int32 StackCount);
+	void UpdateStackCount(int32 Count);
 
 	FSlottedItemClicked OnSlottedItemClicked;
 
