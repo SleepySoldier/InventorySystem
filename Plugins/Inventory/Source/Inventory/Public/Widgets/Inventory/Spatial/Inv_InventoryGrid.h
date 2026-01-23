@@ -94,6 +94,11 @@ private:
 	UUserWidget* GetHiddenCursorWidget();
 	bool IsSameStackable(const UInv_InventoryItem* ClickedInventoryItem);
 	void SwapWithHoverItem(UInv_InventoryItem* ClickedInventoryItem, const int32 GridIndex);
+	bool ShouldSwapStackCounts(const int32 RoomInClickedSlot, const int32 HoveredStackCount, const int32 MaxStackSize) const;
+	void SwapStackCounts(const int32 ClickedStackCount, const int32 HoveredStackCount, const int32 Index);
+	bool ShouldConsumeHoveredItemStacks(const int32 HoveredStackCount, const int32 RoomInClickedSlot);
+	void ConsumeHoveredItemStacks(const int32 ClickedStackCount, const int32 HoveredStackCount, const int32 Index);
+	
 
 
 	UPROPERTY(EditAnywhere, Category = "Inventory")
