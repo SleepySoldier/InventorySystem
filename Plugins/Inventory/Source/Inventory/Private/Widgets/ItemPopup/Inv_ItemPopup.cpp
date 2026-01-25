@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inv_ItemPopup.h"
+#include "Widgets/ItemPopup/Inv_ItemPopup.h"
 
 #include "Components/Button.h"
 #include "Components/Slider.h"
@@ -31,7 +31,7 @@ int32 UInv_ItemPopup::GetSplitAmount() const
 
 void UInv_ItemPopup::SplitButtonClicked()
 {
-	if (OnSplit.ExecuteIfBound(GetSplitAmount(), Index))
+	if (OnSplit.ExecuteIfBound(GetSplitAmount(), GridIndex))
 	{
 		RemoveFromParent();
 	}
@@ -39,7 +39,7 @@ void UInv_ItemPopup::SplitButtonClicked()
 
 void UInv_ItemPopup::DropButtonClicked()
 {
-	if (OnDrop.ExecuteIfBound(Index))
+	if (OnDrop.ExecuteIfBound(GridIndex))
 	{
 		RemoveFromParent();
 	}
@@ -47,7 +47,7 @@ void UInv_ItemPopup::DropButtonClicked()
 
 void UInv_ItemPopup::ConsumeButtonClicked()
 {
-	if (OnConsume.ExecuteIfBound(Index))
+	if (OnConsume.ExecuteIfBound(GridIndex))
 	{
 		RemoveFromParent();
 	}

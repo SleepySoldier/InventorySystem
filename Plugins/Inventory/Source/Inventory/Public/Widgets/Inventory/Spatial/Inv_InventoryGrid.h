@@ -18,6 +18,7 @@ class UInv_ItemComponent;
 class UInv_InventoryComponent;
 class UCanvasPanel;
 class UInv_GridSlot;
+class UInv_ItemPopup;
 /**
  * 
  */
@@ -41,10 +42,13 @@ public:
 
 	void ShowCursor();
 	void HideCursor();
+
+	void SetOwningCanvas(UCanvasPanel* OwningCanvas);
 	
 private:
 
 	TWeakObjectPtr<UInv_InventoryComponent> InventoryComponent;
+	TWeakObjectPtr<UCanvasPanel> OwningCanvasPanel;
 	void ConstructGrid();
 
 	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_InventoryItem* Item);
@@ -100,8 +104,12 @@ private:
 	void ConsumeHoveredItemStacks(const int32 ClickedStackCount, const int32 HoveredStackCount, const int32 Index);
 	bool ShouldFillInStack(const int32 RoomInClickedSlot, const int32 HoveredStackCount) const;
 	void FillInStack(const int32 FillAmount, const int32 Remainder, const int32 Index);
+	void CreateItemPopup(const int32 GridIndex);
 	
-	
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	TSubclassOf<UInv_ItemPopup> ItemPopupClass;
+	UPROPERTY()
+	TObjectPtr<UInv_ItemPopup> ItemPopup;
 
 
 	UPROPERTY(EditAnywhere, Category = "Inventory")
@@ -124,6 +132,13 @@ private:
 	void OnGridSlotHovered(int32 GridIndex, const FPointerEvent& MouseEvent);
 	UFUNCTION()
 	void OnGridSlotUnhovered(int32 GridIndex, const FPointerEvent& MouseEvent);
+
+	UFUNCTION()
+	void OnPopupMenuSplit(int32 SplitAmount, int32 Index);
+	UFUNCTION()
+	void OnPopupMenuDrop(int32 Index);
+	UFUNCTION()
+	void OnPopupMenuConsume(int32 Index);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "Inventory")
 	EInv_ItemCategory ItemCategory;
@@ -156,6 +171,9 @@ private:
 	TSubclassOf<UInv_HoverItem> HoverItemClass;
 	UPROPERTY()
 	TObjectPtr<UInv_HoverItem> HoverItem;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	FVector2D ItemPopupOffset;
 
 	FInv_TileParameters TileParameters;
 	FInv_TileParameters LastTileParameters;
